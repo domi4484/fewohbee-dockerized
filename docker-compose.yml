@@ -2,8 +2,8 @@ services:
     web:
         image: nginx:mainline-alpine
         ports:
-            - 80:80
-            - 443:443
+            - 81:80
+            - 444:443
         volumes:
             - feb-data:/var/www/html:cached
             - ./conf/nginx/:/etc/nginx/conf.d/
