@@ -99,11 +99,13 @@ cd /opt/fewohbee-dockerized
 
 During installation:
 - Hostname: `reservations.gotthardhub.ch`
-- SSL: Select "self-signed" but we won't use it (no SSL in docker)
+- SSL: Select "self-signed" (the choice doesn't matter since SSL is handled by host certbot)
 - Enable backups: yes
 - Enable updates: yes
 - Environment: prod
 - Language: de or en
+
+**Note**: The installation script has been patched by setup-subdomain.sh to skip the SSL container setup since your host handles SSL.
 
 ## Step 5: Verify Deployment
 

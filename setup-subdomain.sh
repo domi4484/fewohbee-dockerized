@@ -21,11 +21,16 @@ fi
 echo "Step 1: Backing up original files..."
 cp docker-compose.yml docker-compose.yml.original
 cp conf/nginx/site.conf conf/nginx/site.conf.original
+cp install.sh install.sh.original
 
 # Use subdomain versions
 echo "Step 2: Switching to subdomain configurations..."
 cp docker-compose.subdomain.yml docker-compose.yml
 cp conf/nginx/site.subdomain.conf conf/nginx/site.conf
+
+# Patch install.sh to skip acme container setup
+echo "Step 3: Patching install.sh to skip SSL container setup..."
+sed -i.bak '/########## ssl setup ##########/,/^\$dockerComposeBin exec acme \/bin\/sh -c "\.\/run\.sh"$/d' install.sh
 
 echo ""
 echo "✓ Configuration files updated for subdomain deployment"
@@ -37,7 +42,7 @@ echo ""
 echo "2. Run the installation:"
 echo "   ./install.sh"
 echo "   - Hostname: reservations.gotthardhub.ch"
-echo "   - SSL: Choose 'self-signed' (not used but required by script)"
+echo "   - SSL: Choose 'self-signed' (choice doesn't matter - SSL handled by host)"
 echo ""
 echo "3. Add nginx config on host (see DEPLOYMENT_SUBDOMAIN.md)"
 echo ""
