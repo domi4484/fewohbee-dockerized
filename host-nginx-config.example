@@ -1,0 +1,52 @@
+# Add this to /etc/nginx/sites-available/reservations.gotthardhub.ch
+# Then symlink: sudo ln -s /etc/nginx/sites-available/reservations.gotthardhub.ch /etc/nginx/sites-enabled/
+
+server {
+    listen 164.90.160.108:443 ssl http2;
+    server_name reservations.gotthardhub.ch;
+
+    access_log /var/log/nginx/reservations.access.log;
+    error_log /var/log/nginx/reservations.error.log;
+
+    # SSL certificates (managed by certbot - same cert as gotthardhub.ch)
+    ssl_certificate /etc/letsencrypt/live/gotthardhub.ch/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/gotthardhub.ch/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Security headers
+    add_header X-Content-Type-Options nosniff;
+    add_header X-Frame-Options SAMEORIGIN;
+    add_header X-XSS-Protection "1; mode=block";
+
+    # Proxy to fewohbee docker nginx on port 8083
+    location / {
+        proxy_pass http://127.0.0.1:8083;
+        proxy_http_version 1.1;
+        
+        # Standard proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        
+        # Increase buffer sizes for large responses
+        proxy_buffer_size 128k;
+        proxy_buffers 16 64k;
+        proxy_busy_buffers_size 256k;
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+# HTTP to HTTPS redirect
+server {
+    listen 164.90.160.108:80;
+    server_name reservations.gotthardhub.ch;
+    return 301 https://$host$request_uri;
+}
