@@ -27,6 +27,8 @@ cp install.sh install.sh.original
 echo "Step 2: Switching to subdomain configurations..."
 cp docker-compose.subdomain.yml docker-compose.yml
 cp conf/nginx/site.subdomain.conf conf/nginx/site.conf
+# Remove the .subdomain files to avoid nginx loading them
+rm -f docker-compose.subdomain.yml conf/nginx/site.subdomain.conf
 
 # Patch install.sh to skip acme container setup
 echo "Step 3: Patching install.sh to skip SSL container setup..."
