@@ -1,13 +1,17 @@
+# Docker Compose for Subdomain Deployment
+# Use this when fewohbee runs behind an existing nginx + certbot setup
+# SSL is handled by host nginx, this setup only exposes HTTP on port 8083
+
 services:
     web:
         image: nginx:mainline-alpine
         ports:
-            - 80:80
-            - 443:443
+            # Expose on port 8083 instead of 80/443 to avoid conflicts with host nginx
+            - 127.0.0.1:8083:80
         volumes:
             - feb-data:/var/www/html:cached
             - ./conf/nginx/:/etc/nginx/conf.d/
-            - certs-vol:/certs:ro
+            # No SSL certificates volume - not needed
         environment:
             - HOST_NAME=${HOST_NAME}
         command: /bin/sh -c "envsubst < /etc/nginx/conf.d/templates/server_name.template > /etc/nginx/conf.d/server_name.active && nginx -g 'daemon off;'"
@@ -67,27 +71,7 @@ services:
         networks:
             - internal-network
     
-    acme:
-        image: developeregrem/fewohbee-acme:latest
-        volumes:
-            - certs-vol:/certs
-            - /var/run/docker.sock:/var/run/docker.sock
-            - feb-data:/var/www:cached
-        restart: always
-        entrypoint: ""
-        environment:
-            - HOST_NAME=${HOST_NAME}    # used for self signed certificate
-            - LETSENCRYPT_DOMAINS=${LETSENCRYPT_DOMAINS}
-            - EMAIL=${EMAIL}
-            - SELF_SIGNED=${SELF_SIGNED}
-            - LETSENCRYPT=${LETSENCRYPT}
-            - TZ=${TZ}
-            - DOCKER_API_VERSION=${DOCKER_API_VERSION}
-            - DYNDNS_PROVIDER=${DYNDNS_PROVIDER}
-            - DEDYN_TOKEN=${DEDYN_TOKEN}
-            - DEDYN_NAME=${DEDYN_NAME}
-        networks:
-            - internal-network
+    # ACME container removed - SSL is handled by host certbot
     
 networks:
     internal-network:
@@ -95,7 +79,5 @@ networks:
         
 volumes:
     redis-vol:
-    certs-vol:
     db-vol:
     feb-data:
-    

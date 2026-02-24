@@ -186,10 +186,6 @@ then
     exit 1
 fi
 
-########## ssl setup ##########
-echo "Initiating certificate creation ..."
-sleep 3
-$dockerComposeBin exec acme /bin/sh -c "./run.sh"
 
 ########## application setup ##########
 echo "Setting up application ..."
