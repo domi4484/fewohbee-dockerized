@@ -33,7 +33,7 @@ createCron() {
         return 1
     fi
     targetCron="/etc/cron.d/$1"
-    ln -s $PWD/cron.d/$1 $targetCron    
+    ln -s $PWD/cron.d/$1 $targetCron
     if [ $? -ne 0 ]
     then
         echo "Could not create symlink $targetCron. Do you have the permission to write there?"
@@ -73,9 +73,9 @@ $(sed "s/HOST_NAME=fewohbee/HOST_NAME=$pveHost/" $envTmp > $envTmp.tmp && mv $en
 ########## setup certificate self-signed or letsencrypt ##########
 sslDefault="self-signed"
 ssl=""
-while ! [[ "$ssl" =~ ^(self-signed|letsencrypt)$ ]] 
+while ! [[ "$ssl" =~ ^(self-signed|letsencrypt|none)$ ]]
 do
-    read -p "SSL Certificate: Using self-signed or letsencrypt? [$sslDefault]:" ssl
+    read -p "SSL Certificate: Using self-signed, letsencrypt or none? [$sslDefault]:" ssl
     ssl="${ssl:-${sslDefault}}"
 done
 
@@ -121,7 +121,7 @@ then
     then
         echo "Backups will be stored in ../dbbackup."
     fi
-    chmod +x backup-db.sh  
+    chmod +x backup-db.sh
 fi
 
 read -p "Enable automatic updates of docker images? (yes/no) [$cronDefault]:" cronDocker
@@ -135,7 +135,7 @@ fi
 ########## setup symfony env ##########
 pveEnvDefault="prod"
 pveEnv=""
-while ! [[ "$pveEnv" =~ ^(prod|dev)$ ]] 
+while ! [[ "$pveEnv" =~ ^(prod|dev)$ ]]
 do
     read -p "Do you want to run the tool in productive mode oder development mode (prod/dev) [$pveEnvDefault]:" pveEnv
     pveEnv="${pveEnv:-${pveEnvDefault}}"
@@ -150,7 +150,7 @@ fi
 ### select language ###
 pveLangDefault="de"
 pveLang=""
-while ! [[ "$pveLang" =~ ^(de|en)$ ]] 
+while ! [[ "$pveLang" =~ ^(de|en)$ ]]
 do
     read -p "Please choose the language of the tool (de/en) [$pveLangDefault]:" pveLang
     pveLang="${pveLang:-${pveLangDefault}}"
@@ -187,16 +187,19 @@ then
 fi
 
 ########## ssl setup ##########
-echo "Initiating certificate creation ..."
-sleep 3
-$dockerComposeBin exec acme /bin/sh -c "./run.sh"
+if [ "$ssl" != "none" ]
+then
+    echo "Initiating certificate creation ..."
+    sleep 3
+    $dockerComposeBin exec acme /bin/sh -c "./run.sh"
+fi
 
 ########## application setup ##########
 echo "Setting up application ..."
 echo "Pulling app dependencies and setting up the database (this will take some time)."
 # this check depends on the script entrypoint.sh from fewohbee-phpfpm image
 until [ "`$dockerComposeBin exec -T php /bin/sh -c 'cat /firstrun'`" == "1"  ]
-do 
+do
     echo "still waiting ..."
     sleep 10
 done
@@ -215,13 +218,12 @@ $dockerComposeBin exec --user www-data php /bin/sh -c "php fewohbee/bin/console 
 $dockerComposeBin exec --user www-data php /bin/sh -c "php fewohbee/bin/console doctrine:fixtures:load --append --group templates"
 testDataDefault="no"
 testData=""
-while ! [[ "$testData" =~ ^(yes|no|y|n)$ ]] 
+while ! [[ "$testData" =~ ^(yes|no|y|n)$ ]]
 do
     read -p "Do you want to load some initial test data into the application? (yes/no) [$testDataDefault]:" testData
     testData="${testData:-${testDataDefault}}"
 done
 
-# default is self-signed
 if [ "$testData" == "yes" ]
 then
     $dockerComposeBin exec --user www-data php /bin/sh -c "php fewohbee/bin/console doctrine:fixtures:load --append --group settings --group customer --group reservation --group invoices"
