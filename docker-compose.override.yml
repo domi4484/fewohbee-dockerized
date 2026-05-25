@@ -8,3 +8,4 @@ services:
         volumes:
              - ./conf/db/create-backup-user.sh:/docker-entrypoint-initdb.d/create-backup-user.sh:ro
              - ./conf/db/backup_mysql_cron.sh:/db/backup_mysql_cron.sh:ro
+             - /opt/fewohbee/backup:/dbbackup:Z
